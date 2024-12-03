@@ -10,26 +10,15 @@ int main()
 {
 	char buffer [BUFFER_SIZE];
 	ssize_t a;
-	
-	const char *message = "Bienvenue dans le Shell ENSEA.\nPour quitter, tapez 'exit'.\n";
-	write(STDOUT_FILENO,message,strlen (message));
-	//strlen va permettre de lire toute la longueur de la chaine de caractere
-	const char *prompt= "enseash %\n";
-	write(STDOUT_FILENO,prompt,strlen (prompt));
-	
-	//Lecture de la chaie de caractere saisie par l'utilisateur
-	a= read(STDIN_FILENO, buffer, BUFFER_SIZE -1);
-	
-	if (a>0){
-		buffer[a-1]='\0';
-		//strcmp permet de comparere la chaine de caractere anec le parametre donne
-		if(strcmp(buffer, "exit")==0)
-		{
-			const char *fin= "Sortie";
-	        write(STDOUT_FILENO,fin,strlen (fin));
-			exit(EXIT_SUCCESS);
-		}
-	}			
-	//return 0;
-}
 
+      
+      //Declaration of a constant character pointer that have a message string.
+	const char *message = "Bienvenue dans le Shell ENSEA.\nPour quitter, tapez 'exit'.\n";
+      // strlen returns the length of the message.
+        write(STDOUT_FILENO,message,strlen (message));
+
+        const char *prompt= "enseash %\n";
+      //Writing the prompt in the console.
+      write(STDOUT_FILENO,prompt,strlen (prompt));
+
+      }
