@@ -26,7 +26,7 @@ int main() {
         }
         if (bytes_read > 0) {// If input was successfully read
             buffer[bytes_read - 1] = '\0';
-	    if (strcomp(buffer,"exit)==0){// comparing the string to know if exit is entered
+	    if (strcomp(buffer,"exit")==0){// comparing the string to know if exit is entered
    	    write(STDOUT_FILENO,"Bye bye…\n",11)
         }
             pid = fork();
