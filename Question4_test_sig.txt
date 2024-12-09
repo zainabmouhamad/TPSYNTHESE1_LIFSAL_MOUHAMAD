@@ -1,0 +1,8 @@
+#include <stdio.h>
+// this code is used to test question 4, it provokes a segmentation fault: exit sig:11
+int main() {
+   
+    int *ptr = NULL;// it initially don't have any allocated space
+  
+    *ptr = 42;//we try to write more that the space we have
+}
