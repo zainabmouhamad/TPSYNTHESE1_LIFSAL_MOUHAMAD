@@ -1,0 +1,8 @@
+// This test for question 4 is used to give the exit number : 58 and to test the clock get time as well with sleep(1) => 1000ms
+int main() {
+  
+  sleep(1);
+ 
+   printf("Ceci est un essaie");
+   exit(58); 
+}
