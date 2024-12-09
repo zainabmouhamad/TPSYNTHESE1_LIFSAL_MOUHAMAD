@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <time.h>
+
+#define BUFFER_SIZE 128
+
+void display_prompt() {
+    const char *prompt = "enseash % ";
+    write(STDOUT_FILENO, prompt, strlen(prompt));
+}
+
+int main() {
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+    pid_t pid;
+    int status;
+    struct timespec start_time, end_time;
+    
+    display_prompt(); 
+
+    while (1) {
+        bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE - 1); // Read user input from the terminal
+        if (bytes_read == 0) {  // Detect (Ctrl+D)
+            write(STDOUT_FILENO, "Bye bye...\n", 11);  // Print the goodbye message
+            break;  // Exit the shell loop
+        }
+        
+        if (bytes_read > 0) { // If input was successfully read
+            buffer[bytes_read - 1] = '\0'; // Remove the newline character
+            
+            if (strcmp(buffer, "exit") == 0) {
+                write(STDOUT_FILENO, "Bye bye...\n", 11);
+                break; // Exit the shell loop if the user types "exit"
+            }
+            //This part of the code splits a user input string into individual tokens (words or arguments) based on spaces and stores them in an array.
+            char *token = strtok(buffer, " "); // Tokenize the input command and arguments
+            int i = 0;
+            while (token != NULL) {
+                arguments[i++] = token; // Store each token in the arguments array
+                token = strtok(NULL, " "); // Get the next token
+            }
+            arguments[i] = NULL; // the arguments array is given null as value
+
+            clock_gettime(CLOCK_MONOTONIC, &start_time); // Start the timer
+
+            pid = fork(); // Create a child process
+            if (pid == 0) { // In the child process
+                execlp(arguments[0], arguments[0], NULL); // Execute the command entered by the user
+                
+                const char *error_msg = "Command not found\n";
+                write(STDOUT_FILENO, error_msg, strlen(error_msg)); // If execlp fails, display error message
+                exit(EXIT_FAILURE); // Exit the child process with failure status
+            } else if (pid > 0) { // In the parent process
+                wait(&status); // Wait for the child process to finish executing
+
+                clock_gettime(CLOCK_MONOTONIC, &end_time); // Stop the timer
+                long seconds = end_time.tv_sec - start_time.tv_sec;
+                long nanoseconds = end_time.tv_nsec - start_time.tv_nsec;
+                long duration_ms = seconds * 1000 + nanoseconds / 1000000; // Convert the duration to milliseconds
+
+                if (WIFEXITED(status) == 1) { // If the child process exited normally
+                    char msg[BUFFER_SIZE];
+                    int exit_code = WEXITSTATUS(status); // Get the exit code of the child process
+                    snprintf(msg, BUFFER_SIZE, "enseash [exit:%d|%ldms] %%\n", exit_code, duration_ms);
+                    write(STDOUT_FILENO, msg, strlen(msg)); // Display the exit code and execution time
+                } else if (WIFSIGNALED(status) == 1) { // If the child process was terminated by a signal
+                    char msg[BUFFER_SIZE];
+                    int signal = WTERMSIG(status); // Get the signal that caused the termination
+                    snprintf(msg, BUFFER_SIZE, "enseash [sign:%d|%ldms] %%\n", signal, duration_ms);
+                    write(STDOUT_FILENO, msg, strlen(msg)); // Display the signal and execution time
+                }
+            }
+        }
+    }
+
+    return 0;
+}
