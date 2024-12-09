@@ -19,13 +19,16 @@ int main() {
       display_prompt();// Display the shell prompt
       
     while (1) {
-        bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE - 1);// Read user  from standard input (terminal)
+        bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE - 1);// Read user from terminal
         if (bytes_read == 0) {  //  Detect (Ctrl+D)
             write(STDOUT_FILENO, "Bye bye...\n", 11);  // Print the goodbye message
             break;  // Exit the shell loop
         }
         if (bytes_read > 0) {// If input was successfully read
-                  buffer[bytes_read - 1] = '\0';
+            buffer[bytes_read - 1] = '\0';
+	    if (strcomp(buffer,"exit)==0){// comparing the string to know if exit is entered
+   	    write(STDOUT_FILENO,"Bye bye…\n",11)
+        }
             pid = fork();
             if (pid == 0) { //  the child process  
              execlp(buffer, buffer, NULL);// Replace the child process with the command typed
