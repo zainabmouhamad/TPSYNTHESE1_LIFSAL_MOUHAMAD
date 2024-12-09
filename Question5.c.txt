@@ -1,0 +1,79 @@
+#include <stdio.h>        
+#include <unistd.h>        
+#include <string.h>       
+#include <sys/stat.h>      
+#include <sys/types.h>     
+#include <stdlib.h>       
+#include <sys/wait.h>      
+#include <time.h>          
+
+#define BUFFER_SIZE 128  
+
+// Function to display the shell prompt
+void display_prompt() {
+    const char *prompt = "enseash % ";          
+    write(STDOUT_FILENO, prompt, strlen(prompt)); // Write the prompt message to standard output
+}
+
+int main() {
+    char buffer[BUFFER_SIZE];       
+    ssize_t bytes_read;            
+    pid_t pid;                     
+    int status;                     
+    struct timespec start, end;     // Variable to store the start and end times for measuring time
+
+    display_prompt(); // Display the shell prompt
+
+    while (1) {
+        bytes_read = read(STDIN_FILENO, buffer, BUFFER_SIZE - 1);  // Read user input from the terminal
+        if (bytes_read == 0) {  // Detect if user pressed (Ctrl+D) to exit
+            write(STDOUT_FILENO, "Bye bye...\n", 11);  // 
+            break;  // 
+        }
+
+        if (bytes_read > 0) { // If input was successfully read
+            buffer[bytes_read - 1] = '\0';  // Remove the newline character at the end of the input
+            if (strcmp(buffer, "exit") == 0) {  
+                write(STDOUT_FILENO, "Bye bye...\n", 11);
+                break;  
+            }
+
+            clock_gettime(CLOCK_MONOTONIC, &start);  // Start the timer before running the command
+
+            pid = fork();  // Create a new child process
+
+            if (pid == 0) { // This block runs in the child process
+                execlp(buffer, buffer, NULL);  // Execute the command entered by the user
+
+                // If execlp fails, print an error message
+                const char *error_msg = "Command not found\n";
+                write(STDOUT_FILENO, error_msg, strlen(error_msg));
+                exit(EXIT_FAILURE);  // Exit the child process with failure
+            } else if (pid > 0) { // This block runs in the parent process
+                wait(&status);  // Wait for the child process to finish
+
+                clock_gettime(CLOCK_MONOTONIC, &end);  // Stop the timer after the command execution
+
+                
+                long seconds = end.tv_sec - start.tv_sec;          // Calculate the difference in seconds
+                long nanoseconds = end.tv_nsec - start.tv_nsec;    // Calculate the difference in nanoseconds
+                long duration_ms = seconds * 1000 + nanoseconds / 1000000;  // Convert the time to milliseconds
+
+                // Check if the child process terminated normally
+                if (WIFEXITED(status) == 1) {
+                    char msg[BUFFER_SIZE];
+                    int exit_code = WEXITSTATUS(status);  // Get the exit code of the child process
+                    snprintf(msg, BUFFER_SIZE, "enseash [exit:%d|%ldms] %%\n", exit_code, duration_ms);                     		    write(STDOUT_FILENO, msg, strlen(msg));  // Display the exit code and execution time
+                }
+                // Check if the child process was terminated by a signal
+                else if (WIFSIGNALED(status) == 1) {
+                    char msg[BUFFER_SIZE];
+                    int signal = WTERMSIG(status);  // Get the signal that caused the child process to terminate
+                    snprintf(msg, BUFFER_SIZE, "enseash [sign:%d|%ldms] %%\n", signal, duration_ms);                         		    write(STDOUT_FILENO, msg, strlen(msg));  // Display the signal and execution time
+                }
+            }
+        }
+    }
+
+    return 0;  
+}
